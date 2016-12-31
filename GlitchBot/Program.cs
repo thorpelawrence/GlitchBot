@@ -58,7 +58,7 @@ class Program
             {
                 await e.Channel.SendIsTyping();
                 var query = e.GetArg("query");
-                await e.Channel.SendMessage(GetImageResultUrl(query));
+                await e.Channel.SendMessage(GetImageResultUrl(query, true));
             });
 
         commands.CreateCommand("playmusic")
