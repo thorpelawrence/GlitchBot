@@ -7,6 +7,7 @@
 *.userosscache
 *.sln.docstates
 **/music/*
+!**/music/MUSIC_FILES_HERE.txt
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
