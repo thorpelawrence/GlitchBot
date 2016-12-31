@@ -73,7 +73,8 @@ class Program
                 var files = !string.IsNullOrWhiteSpace(e.GetArg("searchterm"))
                 ? Directory.GetFiles("music", $"*{e.GetArg("searchterm")}*").Where(name => !name.EndsWith(".txt")).ToArray()
                 : Directory.GetFiles("music").Where(name => !name.EndsWith(".txt")).ToArray();
-                await Task.Delay(100);
+                if (files.Length <= 0)
+                    await e.Channel.SendMessage("No files found for that search term");
                 await Task.Run(() => PlayMusic(files, ref client, ref voiceClient, e.Channel));
                 await voiceClient.Disconnect();
             });
