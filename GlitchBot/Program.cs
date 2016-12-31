@@ -71,8 +71,8 @@ class Program
                 var voiceClient = await client.GetService<AudioService>()
                     .Join(voiceChannel);
                 var files = !string.IsNullOrWhiteSpace(e.GetArg("searchterm"))
-                ? Directory.GetFiles("music", $"*{e.GetArg("searchterm")}*").Where(name => !name.EndsWith(".txt"))
-                : Directory.GetFiles("music").Where(name => !name.EndsWith(".txt"));
+                ? Directory.GetFiles("music", $"*{e.GetArg("searchterm")}*").Where(name => !name.EndsWith(".txt")).ToArray()
+                : Directory.GetFiles("music").Where(name => !name.EndsWith(".txt")).ToArray();
                 await Task.Delay(100);
                 await Task.Run(() => PlayMusic(files, ref client, ref voiceClient, e.Channel));
                 await voiceClient.Disconnect();
