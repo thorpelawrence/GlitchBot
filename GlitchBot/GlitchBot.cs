@@ -101,7 +101,7 @@ class Program
 
         client.ExecuteAndWait(async () =>
         {
-            await client.Connect("MjU1MDMxOTYxODEzMjU0MTQ0.CyXsiQ.ffFf88yiwoEzzP-KrSzCJ3rOwHg", TokenType.Bot);
+            await client.Connect("***REMOVED***", TokenType.Bot);
         });
     }
 
