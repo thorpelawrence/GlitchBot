@@ -79,8 +79,20 @@ class Program
                 await voiceClient.Disconnect();
             });
 
+        commands.CreateCommand("listmusic")
+            .Alias("list", "l")
+            .Description("List music files available")
+            .Parameter("searchterm", ParameterType.Optional)
+            .Do(async e =>
+            {
+                var files = !string.IsNullOrWhiteSpace(e.GetArg("searchterm"))
+                ? Directory.GetFiles("music", $"*{e.GetArg("searchterm")}*", SearchOption.AllDirectories).Where(name => !name.EndsWith(".txt")).ToArray()
+                : Directory.GetFiles("music", ".", SearchOption.AllDirectories).Where(name => !name.EndsWith(".txt")).ToArray();
+                await e.Channel.SendMessage(string.Join(Environment.NewLine, files));
+            });
+
         commands.CreateCommand("volume")
-            .Alias("vol")
+            .Alias("vol", "v")
             .Description("Set volume of music")
             .Parameter("volume", ParameterType.Optional)
             .Do(async e =>
