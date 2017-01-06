@@ -128,7 +128,7 @@ class Program
     static List<string> GetMusicFiles(string searchterm)
     {
         var files = new List<string>();
-        if (!string.IsNullOrWhiteSpace(searchterm) || searchterm.Length < 3)
+        if (!string.IsNullOrWhiteSpace(searchterm) && searchterm.Length < 3)
         {
             return new List<string>() { "Search term must be at least 3 characters" };
         }
