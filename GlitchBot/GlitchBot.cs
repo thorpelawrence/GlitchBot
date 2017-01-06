@@ -57,35 +57,41 @@ class Program
             .Do(async e =>
             {
                 await e.Channel.SendIsTyping();
-                var query = e.GetArg("query");
+                var query = string.Join(" ", e.Args);
                 await e.Channel.SendMessage(GetImageResultUrl(query, true));
             });
 
         commands.CreateCommand("playmusic")
             .Alias("music", "play", "m", "p")
             .Description("Play music in voice channel")
-            .Parameter("searchterm", ParameterType.Optional)
+            .Parameter("searchterm", ParameterType.Multiple)
             .Do(async e =>
             {
-                var voiceChannel = e.Server.VoiceChannels.FirstOrDefault();
-                var voiceClient = await client.GetService<AudioService>()
-                    .Join(voiceChannel);
-                var files = GetMusicFiles(e.GetArg("searchterm"));
-                if (files.Count <= 0)
-                    await e.Channel.SendMessage("No files found for that search term");
-                await Task.Run(() => PlayMusic(files, ref client, ref voiceClient, e.Channel));
-                await voiceClient.Disconnect();
+                string searchterm = string.Join(" ", e.Args);
+                if (!string.IsNullOrWhiteSpace(searchterm))
+                {
+                    var voiceChannel = e.Server.VoiceChannels.FirstOrDefault();
+                    var voiceClient = await client.GetService<AudioService>()
+                        .Join(voiceChannel);
+                    var files = GetMusicFiles(searchterm);
+                    if (files.Count <= 0)
+                        await e.Channel.SendMessage("No files found for that search term");
+                    await Task.Run(() => PlayMusic(files, ref client, ref voiceClient, e.Channel));
+                    await voiceClient.Disconnect();
+                }
+                else await e.Channel.SendMessage("Search term must be entered");
             });
 
         commands.CreateCommand("listmusic")
             .Alias("list", "l")
             .Description("List music files available")
-            .Parameter("searchterm", ParameterType.Required)
+            .Parameter("searchterm", ParameterType.Multiple)
             .Do(async e =>
             {
-                if (!string.IsNullOrWhiteSpace(e.GetArg("searchterm")))
+                string searchterm = string.Join(" ", e.Args);
+                if (!string.IsNullOrWhiteSpace(searchterm))
                 {
-                    var files = GetMusicFiles(e.GetArg("searchterm"));
+                    var files = GetMusicFiles(searchterm);
                     files = files.Select(file => file = Path.GetFileName(file)).ToList();
                     if (files.Count <= 0)
                         await e.Channel.SendMessage("No files found for that search term");
@@ -104,19 +110,21 @@ class Program
                 if (e.GetArg("volume") != null && float.TryParse(e.GetArg("volume"), out volume))
                 {
                     if (volume > 1) volume /= 100;
+                    if (volume > 1) volume = 1;
+                    if (volume < 0) volume = 0;
                     musicVolume = volume;
                     await e.Channel.SendMessage($"Volume: {volume:P1}");
                 }
                 else
                 {
-                    await e.Channel.SendMessage($"Volume: {musicVolume:P1}");
-                    await e.Channel.SendMessage("Volume must be a number 0-1 (decimal) or 1-100 (percentage)");
+                    await e.Channel.SendMessage($"Volume: {musicVolume:P1}" + Environment.NewLine + "Volume must be a number 0-1 (decimal) or 1-100 (percentage)");
                 }
             });
 
         client.ExecuteAndWait(async () =>
         {
-            await client.Connect("***REMOVED***", TokenType.Bot);
+            if (File.Exists("CREDENTIALS.txt"))
+                await client.Connect(File.ReadAllLines("CREDENTIALS.txt")[0], TokenType.Bot);
         });
     }
 
@@ -144,9 +152,7 @@ class Program
                 }
             }
         }
-        var folderFiles = !string.IsNullOrWhiteSpace(searchterm)
-        ? Directory.GetFiles("music", $"*{searchterm}*", SearchOption.AllDirectories).Where(name => !name.EndsWith(".txt")).ToArray()
-        : Directory.GetFiles("music", ".", SearchOption.AllDirectories).Where(name => !name.EndsWith(".txt")).ToArray();
+        var folderFiles = Directory.GetFiles("music", $"*{searchterm}*", SearchOption.AllDirectories).Where(name => !name.EndsWith(".txt")).ToArray();
         files.AddRange(folderFiles);
         return files;
     }
