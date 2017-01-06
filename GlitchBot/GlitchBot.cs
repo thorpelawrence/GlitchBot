@@ -62,7 +62,7 @@ class Program
             });
 
         commands.CreateCommand("playmusic")
-            .Alias("music", "play", "m")
+            .Alias("music", "play", "m", "p")
             .Description("Play music in voice channel")
             .Parameter("searchterm", ParameterType.Optional)
             .Do(async e =>
@@ -70,10 +70,8 @@ class Program
                 var voiceChannel = e.Server.VoiceChannels.FirstOrDefault();
                 var voiceClient = await client.GetService<AudioService>()
                     .Join(voiceChannel);
-                var files = !string.IsNullOrWhiteSpace(e.GetArg("searchterm"))
-                ? Directory.GetFiles("music", $"*{e.GetArg("searchterm")}*", SearchOption.AllDirectories).Where(name => !name.EndsWith(".txt")).ToArray()
-                : Directory.GetFiles("music", ".", SearchOption.AllDirectories).Where(name => !name.EndsWith(".txt")).ToArray();
-                if (files.Length <= 0)
+                var files = GetMusicFiles(e.GetArg("searchterm"));
+                if (files.Count <= 0)
                     await e.Channel.SendMessage("No files found for that search term");
                 await Task.Run(() => PlayMusic(files, ref client, ref voiceClient, e.Channel));
                 await voiceClient.Disconnect();
@@ -82,13 +80,18 @@ class Program
         commands.CreateCommand("listmusic")
             .Alias("list", "l")
             .Description("List music files available")
-            .Parameter("searchterm", ParameterType.Optional)
+            .Parameter("searchterm", ParameterType.Required)
             .Do(async e =>
             {
-                var files = !string.IsNullOrWhiteSpace(e.GetArg("searchterm"))
-                ? Directory.GetFiles("music", $"*{e.GetArg("searchterm")}*", SearchOption.AllDirectories).Where(name => !name.EndsWith(".txt")).ToArray()
-                : Directory.GetFiles("music", ".", SearchOption.AllDirectories).Where(name => !name.EndsWith(".txt")).ToArray();
-                await e.Channel.SendMessage(string.Join(Environment.NewLine, files));
+                if (!string.IsNullOrWhiteSpace(e.GetArg("searchterm")))
+                {
+                    var files = GetMusicFiles(e.GetArg("searchterm"));
+                    files = files.Select(file => file = Path.GetFileName(file)).ToList();
+                    if (files.Count <= 0)
+                        await e.Channel.SendMessage("No files found for that search term");
+                    await e.Channel.SendMessage(string.Join(Environment.NewLine, files));
+                }
+                else await e.Channel.SendMessage("Search term must be entered");
             });
 
         commands.CreateCommand("volume")
@@ -122,7 +125,31 @@ class Program
         Console.WriteLine(e.Message);
     }
 
-    static void PlayMusic(string[] files, ref DiscordClient client, ref IAudioClient voiceClient, Channel channel)
+    static List<string> GetMusicFiles(string searchterm)
+    {
+        var files = new List<string>();
+        if (File.Exists("music/FOLDER_LIST.txt"))
+        {
+            var folderList = File.ReadAllLines("music/FOLDER_LIST.txt");
+            foreach (var folder in folderList)
+            {
+                if (Directory.Exists(folder))
+                {
+                    var shortcutFiles = !string.IsNullOrWhiteSpace(searchterm)
+                    ? Directory.GetFiles(folder, $"*{searchterm}*", SearchOption.AllDirectories).Where(name => !name.EndsWith(".txt")).ToArray()
+                    : Directory.GetFiles(folder, ".", SearchOption.AllDirectories).Where(name => !name.EndsWith(".txt")).ToArray();
+                    files.AddRange(shortcutFiles);
+                }
+            }
+        }
+        var folderFiles = !string.IsNullOrWhiteSpace(searchterm)
+        ? Directory.GetFiles("music", $"*{searchterm}*", SearchOption.AllDirectories).Where(name => !name.EndsWith(".txt")).ToArray()
+        : Directory.GetFiles("music", ".", SearchOption.AllDirectories).Where(name => !name.EndsWith(".txt")).ToArray();
+        files.AddRange(folderFiles);
+        return files;
+    }
+
+    static void PlayMusic(List<string> files, ref DiscordClient client, ref IAudioClient voiceClient, Channel channel)
     {
         var channelCount = client.GetService<AudioService>().Config.Channels;
         var outFormat = new WaveFormat(48000, 16, channelCount);
