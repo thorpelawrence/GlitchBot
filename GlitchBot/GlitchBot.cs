@@ -128,16 +128,18 @@ class Program
     static List<string> GetMusicFiles(string searchterm)
     {
         var files = new List<string>();
-        if (File.Exists("music/FOLDER_LIST.txt"))
+        if (!string.IsNullOrWhiteSpace(searchterm) || searchterm.Length < 3)
+        {
+            return new List<string>() { "Search term must be at least 3 characters" };
+        }
+        if (File.Exists("music/FOLDER_LIST.txt") && !string.IsNullOrWhiteSpace(searchterm))
         {
             var folderList = File.ReadAllLines("music/FOLDER_LIST.txt");
             foreach (var folder in folderList)
             {
                 if (Directory.Exists(folder))
                 {
-                    var shortcutFiles = !string.IsNullOrWhiteSpace(searchterm)
-                    ? Directory.GetFiles(folder, $"*{searchterm}*", SearchOption.AllDirectories).Where(name => !name.EndsWith(".txt")).ToArray()
-                    : Directory.GetFiles(folder, ".", SearchOption.AllDirectories).Where(name => !name.EndsWith(".txt")).ToArray();
+                    var shortcutFiles = Directory.GetFiles(folder, $"*{searchterm}*", SearchOption.AllDirectories).Where(name => !name.EndsWith(".txt")).ToArray();
                     files.AddRange(shortcutFiles);
                 }
             }
