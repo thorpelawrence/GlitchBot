@@ -164,7 +164,6 @@ class Program
         foreach (var file in files)
         {
             channel.SendMessage("Now Playing: " + Path.GetFileName(file));
-            client.SetGame(Path.GetFileName(file));
             using (var reader = new MediaFoundationReader(file))
             using (var resampler = new MediaFoundationResampler(reader, outFormat))
             {
@@ -190,7 +189,6 @@ class Program
                             Console.WriteLine(ex.Message);
                         }
                 }
-                client.SetGame("");
             }
         }
     }
